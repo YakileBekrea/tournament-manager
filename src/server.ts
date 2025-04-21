@@ -86,6 +86,16 @@ class Match extends Model {
     public tourneyId!: number
     public readonly createdAt!: Date
     public readonly updatedAt!: Date
+
+    public async countDaysUntil(): Promise<number> {
+        var date = this.date.getTime() - new Date().getTime()
+
+        date /= 86400000
+
+        date = Math.trunc(date)
+
+        return date
+    }
 }
 
 class Tourney extends Model{
@@ -218,9 +228,6 @@ sequelize.sync()
 
 //TODO: Consider moving each of the models into their own file. This current set up is fine for now, but will get cumbersome later.
 
-
-
-
 //Server stuff
 const port = 3000
 
@@ -250,6 +257,10 @@ app.get("/matches/:id", async (req, res) => {
             matchId: req.params.id
         }
     })
+
+    //debug for testing the countDaysUntil method.
+    //delete later.
+    console.log(Matches?.countDaysUntil())
 
     res.json(Matches)
 })

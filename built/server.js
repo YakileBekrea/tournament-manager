@@ -18,8 +18,6 @@ const sequelize_1 = require("sequelize");
 const path_1 = __importDefault(require("path"));
 //Models and database
 class Player extends sequelize_1.Model {
-    //TODO: Update this so it excludes matches that haven't completed yet.
-    //That is, matches with a null winnerId
     getWinPercentageMatches() {
         return __awaiter(this, void 0, void 0, function* () {
             var resultString = "";
@@ -28,9 +26,11 @@ class Player extends sequelize_1.Model {
                     winnerId: this.id
                 }
             });
+            //Get both player1 and player 2 id matches.
             const participated = (yield Match.count({
                 where: {
                     player1Id: this.id,
+                    //Exclude incomplete matches
                     winnerId: {
                         [sequelize_1.Op.not]: null
                     }
@@ -38,6 +38,7 @@ class Player extends sequelize_1.Model {
             })) + (yield Match.count({
                 where: {
                     player2Id: this.id,
+                    //Exclude incomplete matches
                     winnerId: {
                         [sequelize_1.Op.not]: null
                     }
@@ -70,6 +71,14 @@ class Player extends sequelize_1.Model {
     }
 }
 class Match extends sequelize_1.Model {
+    countDaysUntil() {
+        return __awaiter(this, void 0, void 0, function* () {
+            var date = this.date.getTime() - new Date().getTime();
+            date /= 86400000;
+            date = Math.trunc(date);
+            return date;
+        });
+    }
 }
 class Tourney extends sequelize_1.Model {
 }
@@ -192,6 +201,17 @@ app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const Matches = yield Match.findAll();
     res.json(Matches);
 }));
+app.get("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const Matches = yield Match.findOne({
+        where: {
+            matchId: req.params.id
+        }
+    });
+    //debug for testing the countDaysUntil method.
+    //delete later.
+    console.log(Matches === null || Matches === void 0 ? void 0 : Matches.countDaysUntil());
+    res.json(Matches);
+}));
 app.get("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Players = yield Player.findAll();
     res.json(Players);
@@ -214,6 +234,15 @@ app.get("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function
     const Tournament = yield Tourney.findAll();
     res.json(Tournament);
 }));
+app.get("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const Tournament = yield Tourney.findOne({
+        where: {
+            tourneyId: req.params.id
+        }
+    });
+    res.json(Tournament);
+}));
+//Post methods
 app.post("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const name = req.body.name;
     const size = req.body.size;
@@ -229,12 +258,10 @@ app.post("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, functio
     const eventName = req.body.eventName;
     const description = req.body.description;
     const winnerId = req.body.winnerId;
-    const tourneyId = req.body.tourneyId;
     yield Tourney.create({
         eventName,
         description,
         winnerId,
-        tourneyId
     });
     res.status(201).send("Tournament created.");
 }));
@@ -280,6 +307,87 @@ app.delete("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, f
     });
     res.status(200).send("Tournament " + req.params.id + " deleted.");
 }));
+//Patch methods
+//TODO: Test these proper. They have not been tested and may be buggy.
+app.patch("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const player1Id = req.body.player1Id;
+    const player2Id = req.body.player2Id;
+    const date = req.body.date;
+    const echelon = req.body.echelon;
+    const winnerId = req.body.winnerId;
+    const tourneyId = req.body.tourneyId;
+    var updater = yield Match.findOne({
+        where: {
+            matchId: req.params.id
+        }
+    });
+    if (updater !== null) {
+        if (player1Id !== null) {
+            updater.player1Id = player1Id;
+        }
+        if (player2Id !== null) {
+            updater.player2Id = player2Id;
+        }
+        if (date !== null) {
+            updater.date = date;
+        }
+        if (echelon !== null) {
+            updater.echelon = echelon;
+        }
+        if (winnerId !== null) {
+            updater.winnerId = winnerId;
+        }
+        if (tourneyId !== null) {
+            updater.tourneyId = tourneyId;
+        }
+    }
+    updater === null || updater === void 0 ? void 0 : updater.save();
+    res.status(200).send("Match " + req.params.id + " updated.");
+}));
+app.patch("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const name = req.body.name;
+    const size = req.body.size;
+    const skillLevel = req.body.skillLevel;
+    var updater = yield Player.findOne({
+        where: {
+            playerId: req.params.id
+        }
+    });
+    if (updater !== null) {
+        if (name !== null) {
+            updater.name = name;
+        }
+        if (size !== null) {
+            updater.size = size;
+        }
+        if (skillLevel !== null) {
+            updater.skillLevel = skillLevel;
+        }
+    }
+    updater === null || updater === void 0 ? void 0 : updater.save();
+    res.status(200).send("Player " + req.params.id + " updated.");
+}));
+app.patch("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const eventName = req.body.eventName;
+    const description = req.body.description;
+    var updater = yield Tourney.findOne({
+        where: {
+            tourneyId: req.params.id
+        }
+    });
+    if (updater !== null) {
+        if (eventName !== null) {
+            updater.eventName = eventName;
+        }
+        if (description !== null) {
+            updater.description = description;
+        }
+    }
+}));
+//Start server
 app.listen(port, () => {
     console.log("Server is running on port " + port);
 });
+//TODO
+//chop some of this up into individual files, we're at 500+ lines and this is becoming very cumbersome
+//do that next to prevent it from getting even more out of hand.
