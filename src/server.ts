@@ -4,218 +4,15 @@ import { engine } from "express-handleBars"
 import helmet from "helmet"
 import { ParsedQs } from "qs";
 import bodyParser from "body-parser";
-import { DataTypes, Model, Op, Sequelize } from "sequelize";
+import { DataTypes, Model, Op} from "sequelize";
 import path from "path";
+import sequelize from "./database";
+import { Tourney } from "./models/tourney";
+import { Match } from "./models/match";
+import { Player } from "./models/player"
 
+const session = require('express-session')
 
-//Models and database
-class Player extends Model {
-    public id!: number
-    public name!: string
-    public size!: number
-    public skillLevel!: string
-    public readonly createdAt!: Date
-    public readonly updatedat!: Date
-
-    public async getWinPercentageMatches(): Promise<string> {
-        var resultString = "";
-
-        const won = await Match.count({
-            where: 
-            {
-                winnerId: this.id
-            }
-        })
-
-        //Get both player1 and player 2 id matches.
-        const participated = await Match.count({
-            where:
-            {
-                player1Id: this.id,
-                //Exclude incomplete matches
-                winnerId: {
-                    [Op.not]: null
-                }
-            }
-        }) + await Match.count({
-            where:
-            {
-                player2Id: this.id,
-                //Exclude incomplete matches
-                winnerId: {
-                    [Op.not]: null
-                }
-            }
-        })
-
-        resultString = ((won/participated) * 100) + "%"
-
-        return resultString;
-    };
-
-    public async getWonMatches(): Promise<number> {
-        const won = await Match.count({
-            where: {
-                winnerId: this.id
-            }
-        })
-
-        return won;
-    }
-
-    public async getWonTournaments(): Promise<number> {
-        const won = await Tourney.count({
-            where: {
-                winnerId: this.id
-            }
-        })
-
-        return won;
-    }
-
-    //TODO: Figure out a way to do a getWonTournamentsPercentage
-}
-
-class Match extends Model {
-    public matchId!: number
-    public echelon!: number
-    public date!: Date
-    public winnerId!: number
-    public player1Id!: number
-    public player2Id!: number
-    public tourneyId!: number
-    public readonly createdAt!: Date
-    public readonly updatedAt!: Date
-
-    public async countDaysUntil(): Promise<number> {
-        var date = this.date.getTime() - new Date().getTime()
-
-        date /= 86400000
-
-        date = Math.trunc(date)
-
-        return date
-    }
-}
-
-class Tourney extends Model{
-    public tourneyId!: number
-    public winnerId!: number
-    public eventName!: String
-    public description!: String
-    public readonly createdAt!: Date
-    public readonly updatedAt!: Date
-}
-
-const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, 'database.sqlite'),
-    logging: false
-  });
-
-Tourney.init(
-    {
-        tourneyId: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        winnerId: {
-            type: DataTypes.INTEGER
-        },
-        eventName: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        description: {
-            type: DataTypes.STRING,
-            allowNull: false
-        }
-    },
-    {
-        sequelize,
-        modelName: 'Tourney',
-        timestamps: true
-    }
-)
-
-Match.init(
-    {
-        matchId: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        echelon: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        date: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW
-        },
-        winnerId: {
-            type: DataTypes.INTEGER,
-        },
-        player1Id: {
-            type: DataTypes.INTEGER
-        },
-        player2Id: {
-            type: DataTypes.INTEGER
-        },
-        tourneyId: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-            //currently if this is null, the server crashes. We still can't allow that to be null so...
-            //TODO: fix that.
-        }
-    },
-    {
-        sequelize,
-        modelName: 'Match',
-        timestamps: true
-    }
-)
-
-Player.init(
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-        },
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            validate: {
-                len: [3,100]
-            },
-            unique: true
-        },
-        size: {
-            type: DataTypes.INTEGER,
-            validate: {
-                min: 1,
-                max: 16   
-            }
-        },
-        skillLevel: {
-            type: DataTypes.STRING,
-            validate: {
-                isIn: [['beginner', 'intermediate', 'expert', 'master', 'grandmaster']]
-            }
-        }
-    },
-    {
-        sequelize,
-        modelName: 'Player'
-    }
-)
-
-Match.belongsTo(Tourney, {
-    foreignKey: 'tourneyId'
-})
 //TODO: implement the rest of the associations.
 //Match.hasMany(Player, {
     //foreignKey: '',
@@ -226,14 +23,13 @@ Match.belongsTo(Tourney, {
 
 sequelize.sync()
 
-//TODO: Consider moving each of the models into their own file. This current set up is fine for now, but will get cumbersome later.
-
 //Server stuff
 const port = 3000
 
 const app = express()
 
 app.use(bodyParser())
+//app.use(cookieParser())
 
 //TODO: Make this actually display a proper homepage.
 app.get("/", (req, res) => {
@@ -372,6 +168,41 @@ app.delete("/matches/:id", async (req, res) => {
     res.status(200).send("Match " + req.params.id + " deleted")
 })
 
+app.delete("/matches", async (req, res) => {
+
+
+    if (req.body.tourneyId !== null)
+    {
+        await Match.destroy({
+            where: {
+            tourneyId: req.body.tourneyId
+            }
+        })
+
+        res.status(200).send("Matches of Tourney " + req.body.tourneyId + " deleted.")
+    }
+    else if (req.body.player1Id !== null)
+    {
+        await Match.destroy({
+            where: {
+                player1Id: req.body.player1Id
+            }
+        })
+
+        res.status(200).send("Matches with player " + req.body.player1Id + " deleted.")
+    }
+    else if (req.body.player2Id !== null)
+    {
+        await Match.destroy({
+            where: {
+                player2Id: req.body.player2Id
+            }
+        })
+    }
+    else
+        res.status(500).send("Please specify proper data.")
+})
+
 app.delete("/players/:id", async (req, res) => {
 
     await Player.destroy({
@@ -385,13 +216,19 @@ app.delete("/players/:id", async (req, res) => {
 
 app.delete("/tournaments/:id", async (req, res) => {
 
+    await Match.destroy({
+        where: {
+            tourneyId: req.params.id
+        }
+    })
+
     await Tourney.destroy({
         where: {
             tourneyId: req.params.id
         }
     })
 
-    res.status(200).send("Tournament " + req.params.id + " deleted.")
+    res.status(200).send("Tournament " + req.params.id + " and its matches deleted.")
 })
 
 //Patch methods
@@ -507,7 +344,3 @@ app.patch("/tournaments/:id", async (req, res) => {
 app.listen(port, () => {
     console.log("Server is running on port " + port)
 })
-
-//TODO
-//chop some of this up into individual files, we're at 500+ lines and this is becoming very cumbersome
-//do that next to prevent it from getting even more out of hand.
