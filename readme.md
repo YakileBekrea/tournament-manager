@@ -27,3 +27,16 @@ Tournament
 
 eventName
 description
+
+Delete methods can be accessed with "/players/id", "/tournaments/id", "/matches/id"
+
+The id routing can be ommited. If so, records will be deleted by priority of the fields specificied in the request's body.
+The priorities are
+
+Match:
+
+tourneyId
+player1Id
+player2Id
+winnerId
+date
