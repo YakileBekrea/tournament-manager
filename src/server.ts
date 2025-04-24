@@ -1,11 +1,7 @@
 import express from "express";
-import fs from "fs";
 import { engine } from "express-handleBars"
 import helmet from "helmet"
-import { ParsedQs } from "qs";
-import bodyParser from "body-parser";
-import { DataTypes, Model, Op} from "sequelize";
-import path from "path";
+import bodyParser, { json } from "body-parser";
 import sequelize from "./database";
 import { Tourney } from "./models/tourney";
 import { Match } from "./models/match";
@@ -38,9 +34,41 @@ app.get("/", (req, res) => {
 
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
+//TODO: Set up the rest of the search options
 app.get("/matches", async (req, res) => {
 
-    const Matches = await Match.findAll()
+    var where = {
+        
+    }
+
+    if (req.query.winner !== undefined)
+    {
+        where = {
+            ...where,
+            winnerId: req.query.winner
+        }
+    }
+    if (req.query.player1 !== undefined)
+    {
+        where = {
+            ...where,
+            player1Id: req.query.player1
+        }
+    }
+    if (req.query.player2 !== undefined)
+    {
+        where = {
+            ...where,
+            player2Id: req.query.player2
+        }
+    }
+
+    console.log(where)
+
+    const Matches = await Match.findAll({
+        where
+    })
+
 
     res.json(Matches)
 })
@@ -109,6 +137,8 @@ app.get("/tournaments/:id", async (req, res) => {
 
 //Post methods
 app.post("/players", async (req, res) => {
+
+    try {
     const name = req.body.name;
     const size = req.body.size;
     const skillLevel = req.body.skillLevel
@@ -118,7 +148,14 @@ app.post("/players", async (req, res) => {
         size,
         skillLevel
     })
+    
     res.status(201).send("Player Registered.");
+    }
+    catch (error)
+    {
+        console.log(error)
+        res.status(500).send(error)
+    }
 })
 
 app.post("/tournaments", async (req, res) => {
@@ -235,12 +272,14 @@ app.delete("/tournaments/:id", async (req, res) => {
 //TODO: Test these proper. They have not been tested and may be buggy.
 app.patch("/matches/:id", async (req, res) => {
 
+    try {
     const player1Id = req.body.player1Id;
     const player2Id = req.body.player2Id;
     const date = req.body.date;
     const echelon = req.body.echelon;
     const winnerId = req.body.winnerId;
     const tourneyId = req.body.tourneyId;
+    const nextMatch = req.body.nextMatch;
 
     var updater = await Match.findOne({
         where: 
@@ -251,35 +290,45 @@ app.patch("/matches/:id", async (req, res) => {
 
     if (updater !== null)
     {
-        if (player1Id !== null)
+        if (player1Id !== undefined)
         {
             updater.player1Id = player1Id
         }
-        if (player2Id !== null)
+        if (player2Id !== undefined)
         {
             updater.player2Id = player2Id
         }
-        if (date !== null)
+        if (date !== undefined)
         {
             updater.date = date
         }
-        if (echelon !== null)
+        if (echelon !== undefined)
         {
             updater.echelon = echelon
         }
-        if (winnerId !== null)
+        if (winnerId !== undefined)
         {
             updater.winnerId = winnerId
         }
-        if (tourneyId !== null)
+        if (tourneyId !== undefined)
         {
             updater.tourneyId = tourneyId
+        }
+        if (nextMatch !== undefined)
+        {
+            updater.nextMatch = nextMatch
         }
     }
 
     updater?.save()
 
     res.status(200).send("Match " + req.params.id + " updated.")
+    }
+    catch (error)
+    {
+        console.log(error)
+        res.status(500).send(error)
+    }
 })
 
 app.patch("/players/:id", async (req, res) => {

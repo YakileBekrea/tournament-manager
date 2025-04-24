@@ -10,6 +10,7 @@ export class Match extends Model {
     public player1Id!: number
     public player2Id!: number
     public tourneyId!: number
+    public nextMatch!: number
     public readonly createdAt!: Date
     public readonly updatedAt!: Date
 
@@ -30,6 +31,9 @@ Match.init(
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true
+        },
+        nextMatch: {
+            type: DataTypes.INTEGER
         },
         echelon: {
             type: DataTypes.INTEGER,
@@ -57,6 +61,39 @@ Match.init(
         }
     },
     {
+        hooks:
+        {
+            afterUpdate: async (match, options) => {
+
+                if (match.winnerId !== null)
+                {
+                    var updater = await Match.findByPk(match.nextMatch)
+                    if (updater !== null)
+                    {
+                        console.log("Updater was not null.")
+                        if (updater.player1Id !== null)
+                        {
+                            console.log("player1Id was not null")
+                            if (updater.player2Id !== null)
+                            {
+                                console.log("Tried updating " + updater.matchId + " but both player slots are full!")
+                            }
+                            else
+                            {
+                                console.log("player2Id slot filled.")
+                                updater.player2Id = match.winnerId
+                            }
+                        }
+                        else
+                        {
+                            console.log("player2Id slot filled.")
+                            updater.player1Id = match.winnerId
+                        }
+                    }
+                    updater?.save()
+                }
+            }
+        },
         sequelize,
         modelName: 'Match',
         timestamps: true

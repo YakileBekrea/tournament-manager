@@ -33,6 +33,9 @@ Match.init({
         primaryKey: true,
         autoIncrement: true
     },
+    nextMatch: {
+        type: sequelize_1.DataTypes.INTEGER
+    },
     echelon: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false
@@ -58,6 +61,31 @@ Match.init({
         //TODO: fix that.
     }
 }, {
+    hooks: {
+        afterUpdate: (match, options) => __awaiter(void 0, void 0, void 0, function* () {
+            if (match.winnerId !== null) {
+                var updater = yield Match.findByPk(match.nextMatch);
+                if (updater !== null) {
+                    console.log("Updater was not null.");
+                    if (updater.player1Id !== null) {
+                        console.log("player1Id was not null");
+                        if (updater.player2Id !== null) {
+                            console.log("Tried updating " + updater.matchId + " but both player slots are full!");
+                        }
+                        else {
+                            console.log("player2Id slot filled.");
+                            updater.player2Id = match.winnerId;
+                        }
+                    }
+                    else {
+                        console.log("player2Id slot filled.");
+                        updater.player1Id = match.winnerId;
+                    }
+                }
+                updater === null || updater === void 0 ? void 0 : updater.save();
+            }
+        })
+    },
     sequelize: database_1.default,
     modelName: 'Match',
     timestamps: true

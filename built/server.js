@@ -38,8 +38,22 @@ app.get("/", (req, res) => {
 });
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
+//TODO: Set up the rest of the search options
 app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const Matches = yield match_1.Match.findAll();
+    var where = {};
+    if (req.query.winner !== undefined) {
+        where = Object.assign(Object.assign({}, where), { winnerId: req.query.winner });
+    }
+    if (req.query.player1 !== undefined) {
+        where = Object.assign(Object.assign({}, where), { player1Id: req.query.player1 });
+    }
+    if (req.query.player2 !== undefined) {
+        where = Object.assign(Object.assign({}, where), { player2Id: req.query.player2 });
+    }
+    console.log(where);
+    const Matches = yield match_1.Match.findAll({
+        where
+    });
     res.json(Matches);
 }));
 app.get("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -85,15 +99,21 @@ app.get("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, func
 }));
 //Post methods
 app.post("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const name = req.body.name;
-    const size = req.body.size;
-    const skillLevel = req.body.skillLevel;
-    yield player_1.Player.create({
-        name,
-        size,
-        skillLevel
-    });
-    res.status(201).send("Player Registered.");
+    try {
+        const name = req.body.name;
+        const size = req.body.size;
+        const skillLevel = req.body.skillLevel;
+        yield player_1.Player.create({
+            name,
+            size,
+            skillLevel
+        });
+        res.status(201).send("Player Registered.");
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
 }));
 app.post("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const eventName = req.body.eventName;
@@ -133,12 +153,31 @@ app.delete("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, funct
     res.status(200).send("Match " + req.params.id + " deleted");
 }));
 app.delete("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    yield match_1.Match.destroy({
-        where: {
-            tourneyId: req.body.tourneyId
-        }
-    });
-    res.status(200).send("Matches of Tourney " + req.body.tourneyId + " deleted.");
+    if (req.body.tourneyId !== null) {
+        yield match_1.Match.destroy({
+            where: {
+                tourneyId: req.body.tourneyId
+            }
+        });
+        res.status(200).send("Matches of Tourney " + req.body.tourneyId + " deleted.");
+    }
+    else if (req.body.player1Id !== null) {
+        yield match_1.Match.destroy({
+            where: {
+                player1Id: req.body.player1Id
+            }
+        });
+        res.status(200).send("Matches with player " + req.body.player1Id + " deleted.");
+    }
+    else if (req.body.player2Id !== null) {
+        yield match_1.Match.destroy({
+            where: {
+                player2Id: req.body.player2Id
+            }
+        });
+    }
+    else
+        res.status(500).send("Please specify proper data.");
 }));
 app.delete("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield player_1.Player.destroy({
@@ -164,39 +203,49 @@ app.delete("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, f
 //Patch methods
 //TODO: Test these proper. They have not been tested and may be buggy.
 app.patch("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const player1Id = req.body.player1Id;
-    const player2Id = req.body.player2Id;
-    const date = req.body.date;
-    const echelon = req.body.echelon;
-    const winnerId = req.body.winnerId;
-    const tourneyId = req.body.tourneyId;
-    var updater = yield match_1.Match.findOne({
-        where: {
-            matchId: req.params.id
+    try {
+        const player1Id = req.body.player1Id;
+        const player2Id = req.body.player2Id;
+        const date = req.body.date;
+        const echelon = req.body.echelon;
+        const winnerId = req.body.winnerId;
+        const tourneyId = req.body.tourneyId;
+        const nextMatch = req.body.nextMatch;
+        var updater = yield match_1.Match.findOne({
+            where: {
+                matchId: req.params.id
+            }
+        });
+        if (updater !== null) {
+            if (player1Id !== undefined) {
+                updater.player1Id = player1Id;
+            }
+            if (player2Id !== undefined) {
+                updater.player2Id = player2Id;
+            }
+            if (date !== undefined) {
+                updater.date = date;
+            }
+            if (echelon !== undefined) {
+                updater.echelon = echelon;
+            }
+            if (winnerId !== undefined) {
+                updater.winnerId = winnerId;
+            }
+            if (tourneyId !== undefined) {
+                updater.tourneyId = tourneyId;
+            }
+            if (nextMatch !== undefined) {
+                updater.nextMatch = nextMatch;
+            }
         }
-    });
-    if (updater !== null) {
-        if (player1Id !== null) {
-            updater.player1Id = player1Id;
-        }
-        if (player2Id !== null) {
-            updater.player2Id = player2Id;
-        }
-        if (date !== null) {
-            updater.date = date;
-        }
-        if (echelon !== null) {
-            updater.echelon = echelon;
-        }
-        if (winnerId !== null) {
-            updater.winnerId = winnerId;
-        }
-        if (tourneyId !== null) {
-            updater.tourneyId = tourneyId;
-        }
+        updater === null || updater === void 0 ? void 0 : updater.save();
+        res.status(200).send("Match " + req.params.id + " updated.");
     }
-    updater === null || updater === void 0 ? void 0 : updater.save();
-    res.status(200).send("Match " + req.params.id + " updated.");
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
 }));
 app.patch("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const name = req.body.name;
