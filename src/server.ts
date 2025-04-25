@@ -9,14 +9,6 @@ import { Player } from "./models/player"
 
 const session = require('express-session')
 
-//TODO: implement the rest of the associations.
-//Match.hasMany(Player, {
-    //foreignKey: '',
-//})
-//Tourney.hasOne(Player, {
-    //foreignKey: 'winnerId'
-//})
-
 sequelize.sync()
 
 //Server stuff
@@ -159,6 +151,7 @@ app.post("/players", async (req, res) => {
 })
 
 app.post("/tournaments", async (req, res) => {
+    try {
     const eventName = req.body.eventName;
     const description = req.body.description;
     const winnerId = req.body.winnerId;
@@ -170,10 +163,17 @@ app.post("/tournaments", async (req, res) => {
     })
 
     res.status(201).send("Tournament created.")
+    }
+    catch (error)
+    {
+        console.log(error)
+        res.status(500).send(error)
+    }
 })
 
 app.post("/matches", async (req, res) => {
     
+    try {
     const player1Id = req.body.player1Id;
     const player2Id = req.body.player2Id;
     const echelon = req.body.echelon;
@@ -191,6 +191,12 @@ app.post("/matches", async (req, res) => {
     })
 
     res.status(201).send("Match created.")
+    }
+    catch (error)
+    {
+        console.log(error)
+        res.status(500).send(error)
+    }
 })
 
 //Delete methods
@@ -317,12 +323,14 @@ app.patch("/matches/:id", async (req, res) => {
         if (nextMatch !== undefined)
         {
             updater.nextMatch = nextMatch
+            updater?.save()
+
+            res.status(200).send("Match " + req.params.id + " updated.")
         }
     }
-
-    updater?.save()
-
-    res.status(200).send("Match " + req.params.id + " updated.")
+    else {
+        res.status(500).send("No such match of id " + "req.params.id");
+    }
     }
     catch (error)
     {
@@ -358,11 +366,15 @@ app.patch("/players/:id", async (req, res) => {
         {
             updater.skillLevel = skillLevel
         }
+        updater?.save()
+
+        res.status(200).send("Player " + req.params.id + " updated.")
     }
-
-    updater?.save()
-
-    res.status(200).send("Player " + req.params.id + " updated.")
+    else
+    {
+        res.status(500).send("No such player of id " + req.params.id)
+    }
+    
 })
 
 app.patch("/tournaments/:id", async (req, res) => {
@@ -386,6 +398,10 @@ app.patch("/tournaments/:id", async (req, res) => {
         {
             updater.description = description
         }
+    }
+    else
+    {
+        res.status(500).send("No such tourney of id " + req.params.id)
     }
 })
 

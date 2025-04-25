@@ -56,8 +56,6 @@ Match.init(
         tourneyId: {
             type: DataTypes.INTEGER,
             allowNull: false
-            //currently if this is null, the server crashes. We still can't allow that to be null so...
-            //TODO: fix that.
         }
     },
     {
