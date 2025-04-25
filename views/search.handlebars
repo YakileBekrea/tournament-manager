@@ -2,10 +2,10 @@
 
 <body style="background-color:black">
     
-
+    <center>
     {{#each Players}}
 
-    <div style="display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
         <p>
         Name: {{name}}
         </p>
@@ -18,9 +18,49 @@
         </p>
 
         <a href="players/{{id}}">
-            Visit
+            View
         </a>
 
     </div>
     {{/each}}
+
+    {{#each Matches}}
+
+    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+
+        <p>
+            Competitors: 
+            <a href="players/{{player1Id}}">
+            Entrant {{player1Id}}
+            </a>
+            , 
+            <a href="players/{{player2Id}}">
+            Entrant {{player2Id}}
+            </a>
+        </p>
+
+    </div>
+
+    {{/each}}
+
+    {{#each Tournament}}
+
+    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+
+        <p>
+            Name: {{eventName}}
+        </p>
+        <p>
+            {{description}}
+        </p>
+
+        {{#if winnerId}}
+        <a href="players/{{winnerId}}">
+            Winner
+        </a>
+        {{/if}}
+    </div>
+
+    {{/each}}
+    </center>
 </body>

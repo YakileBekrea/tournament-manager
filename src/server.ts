@@ -7,6 +7,8 @@ import { Tourney } from "./models/tourney";
 import { Match } from "./models/match";
 import { Player } from "./models/player"
 import { allowInsecurePrototypeAccess } from "@handlebars/allow-prototype-access";
+import Handlebars from 'handlebars';
+import { Op } from "sequelize";
 
 const session = require('express-session')
 
@@ -19,14 +21,28 @@ const app = express()
 
 app.use(bodyParser())
 //app.use(cookieParser())
-const Handlebars = require('handlebars')
 app.engine("handlebars", engine({
     handlebars: allowInsecurePrototypeAccess(Handlebars)
 }))
 
 //TODO: Make this actually display a proper homepage.
-app.get("/", (req, res) => {
-    res.send("Hey there!");
+app.get("/", async (req, res) => {
+
+    const today = new Date().setHours(0,0,0,0)
+
+    const upcomingMatch = await Match.findAll({
+        where:
+        {
+            date: {
+                [Op.gt]: today
+            }
+        }
+    })
+
+    res.render("home.handlebars", {
+        req,
+        upcomingMatch
+    })
 })
 
 //For now, these get methods just get all the items in the table and display it as json
@@ -59,14 +75,15 @@ app.get("/matches", async (req, res) => {
         }
     }
 
-    console.log(where)
-
     const Matches = await Match.findAll({
         where
     })
 
 
-    res.json(Matches)
+    res.render("search.handlebars", {
+        req,
+        Matches
+    })
 })
 
 app.get("/matches/:id", async (req, res) => {
@@ -122,7 +139,10 @@ app.get("/tournaments", async (req, res) => {
 
     const Tournament = await Tourney.findAll()
 
-    res.json(Tournament)
+    res.render("search.handlebars", {
+        req,
+        Tournament
+    })
 })
 
 app.get("/tournaments/:id", async (req, res) => {
@@ -134,7 +154,10 @@ app.get("/tournaments/:id", async (req, res) => {
         }
     })
 
-    res.json(Tournament)
+    res.render("tournament.handlebars", {
+        req,
+        Tournament
+    })
 })
 
 
@@ -334,10 +357,11 @@ app.patch("/matches/:id", async (req, res) => {
         if (nextMatch !== undefined)
         {
             updater.nextMatch = nextMatch
-            updater?.save()
-
-            res.status(200).send("Match " + req.params.id + " updated.")
+            
         }
+        updater?.save()
+
+        res.status(200).send("Match " + req.params.id + " updated.")
     }
     else {
         res.status(500).send("No such match of id " + "req.params.id");
@@ -391,6 +415,7 @@ app.patch("/players/:id", async (req, res) => {
 app.patch("/tournaments/:id", async (req, res) => {
     const eventName = req.body.eventName
     const description = req.body.description
+    const winnerId = req.body.winner
 
     var updater = await Tourney.findOne({
         where:
@@ -401,14 +426,22 @@ app.patch("/tournaments/:id", async (req, res) => {
 
     if (updater !== null)
     {
-        if (eventName !== null)
+        if (eventName !== undefined)
         {
             updater.eventName = eventName
         }
-        if (description !== null)
+        if (description !== undefined)
         {
             updater.description = description
         }
+        if (winnerId !== undefined)
+        {
+            updater.winnerId = winnerId
+        }
+
+        updater.save()
+
+        res.status(200).send("Tourney " + req.params.id + " updated.")
     }
     else
     {

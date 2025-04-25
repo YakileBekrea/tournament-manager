@@ -20,6 +20,8 @@ const tourney_1 = require("./models/tourney");
 const match_1 = require("./models/match");
 const player_1 = require("./models/player");
 const allow_prototype_access_1 = require("@handlebars/allow-prototype-access");
+const handlebars_1 = __importDefault(require("handlebars"));
+const sequelize_1 = require("sequelize");
 const session = require('express-session');
 database_1.default.sync();
 //Server stuff
@@ -27,14 +29,26 @@ const port = 3000;
 const app = (0, express_1.default)();
 app.use((0, body_parser_1.default)());
 //app.use(cookieParser())
-const Handlebars = require('handlebars');
 app.engine("handlebars", (0, express_handleBars_1.engine)({
-    handlebars: (0, allow_prototype_access_1.allowInsecurePrototypeAccess)(Handlebars)
+    handlebars: (0, allow_prototype_access_1.allowInsecurePrototypeAccess)(handlebars_1.default)
 }));
 //TODO: Make this actually display a proper homepage.
-app.get("/", (req, res) => {
-    res.send("Hey there!");
-});
+app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const today = new Date().setHours(0, 0, 0, 0);
+    console.log(today);
+    const upcomingMatch = yield match_1.Match.findAll({
+        where: {
+            date: {
+                [sequelize_1.Op.gt]: today
+            }
+        }
+    });
+    console.log(upcomingMatch);
+    res.render("home.handlebars", {
+        req,
+        upcomingMatch
+    });
+}));
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
 app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -48,11 +62,13 @@ app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     if (req.query.player2 !== undefined) {
         where = Object.assign(Object.assign({}, where), { player2Id: req.query.player2 });
     }
-    console.log(where);
     const Matches = yield match_1.Match.findAll({
         where
     });
-    res.json(Matches);
+    res.render("search.handlebars", {
+        req,
+        Matches
+    });
 }));
 app.get("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Matches = yield match_1.Match.findOne({
@@ -92,7 +108,10 @@ app.get("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function
 }));
 app.get("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Tournament = yield tourney_1.Tourney.findAll();
-    res.json(Tournament);
+    res.render("search.handlebars", {
+        req,
+        Tournament
+    });
 }));
 app.get("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Tournament = yield tourney_1.Tourney.findOne({
@@ -100,7 +119,10 @@ app.get("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, func
             tourneyId: req.params.id
         }
     });
-    res.json(Tournament);
+    res.render("tournament.handlebars", {
+        req,
+        Tournament
+    });
 }));
 //Post methods
 app.post("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -254,9 +276,9 @@ app.patch("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
             }
             if (nextMatch !== undefined) {
                 updater.nextMatch = nextMatch;
-                updater === null || updater === void 0 ? void 0 : updater.save();
-                res.status(200).send("Match " + req.params.id + " updated.");
             }
+            updater === null || updater === void 0 ? void 0 : updater.save();
+            res.status(200).send("Match " + req.params.id + " updated.");
         }
         else {
             res.status(500).send("No such match of id " + "req.params.id");
@@ -296,18 +318,24 @@ app.patch("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.patch("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const eventName = req.body.eventName;
     const description = req.body.description;
+    const winnerId = req.body.winner;
     var updater = yield tourney_1.Tourney.findOne({
         where: {
             tourneyId: req.params.id
         }
     });
     if (updater !== null) {
-        if (eventName !== null) {
+        if (eventName !== undefined) {
             updater.eventName = eventName;
         }
-        if (description !== null) {
+        if (description !== undefined) {
             updater.description = description;
         }
+        if (winnerId !== undefined) {
+            updater.winnerId = winnerId;
+        }
+        updater.save();
+        res.status(200).send("Tourney " + req.params.id + " updated.");
     }
     else {
         res.status(500).send("No such tourney of id " + req.params.id);

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<body style="background-color:black">
+    
+    <center>
+
+    {{#each upcomingMatch}}
+    <div style="text-align:center; background-color:azure; border-style:double; display:item-list; font-size:20px; padding:10px; width:500px">
+        <p>
+            Match for
+            <a href="tournaments/{{tourneyId}}">
+                Tournament {{tourneyId}}
+            </a>
+        </p>
+        <p>
+            Entrants:
+            {{#if player1Id}}
+            <a href="players/{{player1Id}}">
+                Entrant 1
+            </a>
+            {{/if}}
+            {{#if player2Id}}
+            <a href="players/{{player2Id}}">
+                Entrant 2
+            </a>
+            {{/if}}
+        </p>
+        <p>
+            <p style="font-size: 16px">
+               Happening at 
+            </p>
+            <p style="font-size: 16px">
+                {{date}}
+            </p>
+            
+        </p>
+    </div>
+    {{/each}}
+
+    </center>
+</body>
