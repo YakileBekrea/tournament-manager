@@ -13,32 +13,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const express_handleBars_1 = require("express-handleBars");
 const body_parser_1 = __importDefault(require("body-parser"));
 const database_1 = __importDefault(require("./database"));
 const tourney_1 = require("./models/tourney");
 const match_1 = require("./models/match");
 const player_1 = require("./models/player");
+const allow_prototype_access_1 = require("@handlebars/allow-prototype-access");
 const session = require('express-session');
-//TODO: implement the rest of the associations.
-//Match.hasMany(Player, {
-//foreignKey: '',
-//})
-//Tourney.hasOne(Player, {
-//foreignKey: 'winnerId'
-//})
 database_1.default.sync();
 //Server stuff
 const port = 3000;
 const app = (0, express_1.default)();
 app.use((0, body_parser_1.default)());
 //app.use(cookieParser())
+const Handlebars = require('handlebars');
+app.engine("handlebars", (0, express_handleBars_1.engine)({
+    handlebars: (0, allow_prototype_access_1.allowInsecurePrototypeAccess)(Handlebars)
+}));
 //TODO: Make this actually display a proper homepage.
 app.get("/", (req, res) => {
     res.send("Hey there!");
 });
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
-//TODO: Set up the rest of the search options
 app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var where = {};
     if (req.query.winner !== undefined) {
@@ -69,7 +67,11 @@ app.get("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function
 }));
 app.get("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Players = yield player_1.Player.findAll();
-    res.json(Players);
+    res.render("search.handlebars", {
+        req,
+        Players
+    });
+    //res.json(Players)
 }));
 app.get("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const player = yield player_1.Player.findOne({
@@ -77,13 +79,16 @@ app.get("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function
             id: req.params.id
         }
     });
-    //this part of the method is a debug to test the get win percentage method for matches
-    //and the getWonMatches and getWonTournaments methods
-    //Delete this later
-    console.log(yield (player === null || player === void 0 ? void 0 : player.getWinPercentageMatches()));
-    console.log(yield (player === null || player === void 0 ? void 0 : player.getWonMatches()));
-    console.log(yield (player === null || player === void 0 ? void 0 : player.getWonTournaments()));
-    res.json(player);
+    const wonPercentage = yield (player === null || player === void 0 ? void 0 : player.getWinPercentageMatches());
+    const wonCount = yield (player === null || player === void 0 ? void 0 : player.getWonMatches());
+    const wonTournaments = yield (player === null || player === void 0 ? void 0 : player.getWonTournaments());
+    res.render("player.handlebars", {
+        req,
+        player,
+        wonPercentage,
+        wonCount,
+        wonTournaments
+    });
 }));
 app.get("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const Tournament = yield tourney_1.Tourney.findAll();
@@ -116,32 +121,44 @@ app.post("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 }));
 app.post("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const eventName = req.body.eventName;
-    const description = req.body.description;
-    const winnerId = req.body.winnerId;
-    yield tourney_1.Tourney.create({
-        eventName,
-        description,
-        winnerId,
-    });
-    res.status(201).send("Tournament created.");
+    try {
+        const eventName = req.body.eventName;
+        const description = req.body.description;
+        const winnerId = req.body.winnerId;
+        yield tourney_1.Tourney.create({
+            eventName,
+            description,
+            winnerId,
+        });
+        res.status(201).send("Tournament created.");
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
 }));
 app.post("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const player1Id = req.body.player1Id;
-    const player2Id = req.body.player2Id;
-    const echelon = req.body.echelon;
-    const date = req.body.date;
-    const winnerId = req.body.winnerId;
-    const tourneyId = req.body.tourneyId;
-    yield match_1.Match.create({
-        player1Id,
-        player2Id,
-        echelon,
-        date,
-        winnerId,
-        tourneyId
-    });
-    res.status(201).send("Match created.");
+    try {
+        const player1Id = req.body.player1Id;
+        const player2Id = req.body.player2Id;
+        const echelon = req.body.echelon;
+        const date = req.body.date;
+        const winnerId = req.body.winnerId;
+        const tourneyId = req.body.tourneyId;
+        yield match_1.Match.create({
+            player1Id,
+            player2Id,
+            echelon,
+            date,
+            winnerId,
+            tourneyId
+        });
+        res.status(201).send("Match created.");
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
 }));
 //Delete methods
 app.delete("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -237,10 +254,13 @@ app.patch("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
             }
             if (nextMatch !== undefined) {
                 updater.nextMatch = nextMatch;
+                updater === null || updater === void 0 ? void 0 : updater.save();
+                res.status(200).send("Match " + req.params.id + " updated.");
             }
         }
-        updater === null || updater === void 0 ? void 0 : updater.save();
-        res.status(200).send("Match " + req.params.id + " updated.");
+        else {
+            res.status(500).send("No such match of id " + "req.params.id");
+        }
     }
     catch (error) {
         console.log(error);
@@ -266,9 +286,12 @@ app.patch("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (skillLevel !== null) {
             updater.skillLevel = skillLevel;
         }
+        updater === null || updater === void 0 ? void 0 : updater.save();
+        res.status(200).send("Player " + req.params.id + " updated.");
     }
-    updater === null || updater === void 0 ? void 0 : updater.save();
-    res.status(200).send("Player " + req.params.id + " updated.");
+    else {
+        res.status(500).send("No such player of id " + req.params.id);
+    }
 }));
 app.patch("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const eventName = req.body.eventName;
@@ -285,6 +308,9 @@ app.patch("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, fu
         if (description !== null) {
             updater.description = description;
         }
+    }
+    else {
+        res.status(500).send("No such tourney of id " + req.params.id);
     }
 }));
 //Start server

@@ -57,8 +57,6 @@ Match.init({
     tourneyId: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false
-        //currently if this is null, the server crashes. We still can't allow that to be null so...
-        //TODO: fix that.
     }
 }, {
     hooks: {

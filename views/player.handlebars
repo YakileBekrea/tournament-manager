@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<body style="background-color:black;">
+    {{#player}}
+
+    <div style="background-color:azure; display:block; border-style:double; padding:10px;">
+
+        <p style="text-size:24px">
+            {{name}}
+        </p>
+        
+        <p>
+            Team Size: {{size}}
+        </p>
+
+        <p>
+            Team Skill: {{skillLevel}}
+        </p>
+        {{/player}}
+        <p>
+            Won Matches: {{wonCount}}
+        </p>
+
+        <p>
+            Match Win Percentage: {{wonPercentage}}
+        </p>
+
+        <p>
+            Won Tournaments: {{wonTournaments}}
+        </p>
+
+    </div>
+</body>

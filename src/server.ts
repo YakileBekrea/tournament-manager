@@ -6,6 +6,7 @@ import sequelize from "./database";
 import { Tourney } from "./models/tourney";
 import { Match } from "./models/match";
 import { Player } from "./models/player"
+import { allowInsecurePrototypeAccess } from "@handlebars/allow-prototype-access";
 
 const session = require('express-session')
 
@@ -18,6 +19,10 @@ const app = express()
 
 app.use(bodyParser())
 //app.use(cookieParser())
+const Handlebars = require('handlebars')
+app.engine("handlebars", engine({
+    handlebars: allowInsecurePrototypeAccess(Handlebars)
+}))
 
 //TODO: Make this actually display a proper homepage.
 app.get("/", (req, res) => {
@@ -26,7 +31,6 @@ app.get("/", (req, res) => {
 
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
-//TODO: Set up the rest of the search options
 app.get("/matches", async (req, res) => {
 
     var where = {
@@ -85,7 +89,11 @@ app.get("/players", async (req, res) => {
 
     const Players = await Player.findAll()
 
-    res.json(Players)
+    res.render("search.handlebars", {
+        req,
+        Players
+    })
+    //res.json(Players)
 })
 
 app.get("/players/:id", async (req, res) => {
@@ -97,14 +105,17 @@ app.get("/players/:id", async (req, res) => {
         }
     })
 
-    //this part of the method is a debug to test the get win percentage method for matches
-    //and the getWonMatches and getWonTournaments methods
-    //Delete this later
-    console.log(await player?.getWinPercentageMatches())
-    console.log(await player?.getWonMatches())
-    console.log(await player?.getWonTournaments())
+    const wonPercentage = await player?.getWinPercentageMatches()
+    const wonCount = await player?.getWonMatches()
+    const wonTournaments = await player?.getWonTournaments()
 
-    res.json(player)
+    res.render("player.handlebars", {
+        req,
+        player,
+        wonPercentage,
+        wonCount,
+        wonTournaments
+    })
 })
 
 app.get("/tournaments", async (req, res) => {

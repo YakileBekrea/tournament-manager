@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<body style="background-color:black">
+    
+
+    {{#each Players}}
+
+    <div style="display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+        <p>
+        Name: {{name}}
+        </p>
+        <p>
+        Size: {{size}}
+        </p>
+        <p>
+        Skill Level: {{skillLevel}}
+        </p>
+        </p>
+
+        <a href="players/{{id}}">
+            Visit
+        </a>
+
+    </div>
+    {{/each}}
+</body>
