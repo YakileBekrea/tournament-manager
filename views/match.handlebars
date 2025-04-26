@@ -6,19 +6,40 @@
         {{#if match}}
             {{#match}}
                 <div style="font-size:20px; width:500px; background-color:azure; padding:10px; border-style:double">
-                    Competitors:
-                    <a href="/players/{{player1Id}}">
-                        Entrant {{player1Id}}
-                    </a>,
-                    <a href="/players/{{player2Id}}">
-                        Entrant {{player2Id}}
+                    Competitors: <br>
+                    {{#if player1Id}}
+                    <a href="players/{{player1Id}}">
+                    Entrant {{player1Id}}
                     </a>
+                    {{else}}
+                        TBD
+                    {{/if}}
+                    <br>
+                    {{#if player2Id}}
+                    <a href="players/{{player2Id}}">
+                    Entrant {{player2Id}}
+                    </a>
+                    {{else}}
+                        TBD
+                    {{/if}}
                     <p>
                         Happening at:
                         <p>
                             {{date}}
                         </p>
                     </p>
+                    <p>
+                        For: 
+                        <a href="/tournaments/{{tourneyId}}">
+                            Tourney: {{tourneyId}}
+                        </a>
+                    </p>
+                    {{#if nextMatch}}
+                    <br>
+                    <a href="/matches/{{nextMatch}}">
+                        Next Match: {{nextMatch}}
+                    </a>
+                    {{/if}}
                 </div>
             {{/match}}
         {{else}}

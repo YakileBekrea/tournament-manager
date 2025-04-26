@@ -8,20 +8,45 @@ import { Player } from "./models/player"
 import { allowInsecurePrototypeAccess } from "@handlebars/allow-prototype-access";
 import Handlebars from 'handlebars';
 import { Op } from "sequelize";
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
+const SequelizeStore = require('connect-session-sequelize')(session.Store)
+const store = new SequelizeStore({ db: sequelize })
 
 sequelize.sync()
+
+
+
+//DEBUG THING. DISABLE BEFORE SHIPPING
+const authorized = true;
 
 //Server stuff
 const port = 3000
 
 const app = express()
 
+declare module "express-session" {
+    interface SessionData {
+      authorized: boolean;
+    }
+  }
+
 app.use(bodyParser())
-//app.use(cookieParser())
+app.use(cookieParser())
 app.engine("handlebars", engine({
     handlebars: allowInsecurePrototypeAccess(Handlebars)
 }))
+app.use(session({
+    secret: 'secretKey',
+    resave: false,
+    saveUninitialized: true,
+    store: store,
 
+    cookie: {
+        secure: true,
+        maxAge: 3600000 //60 minute age
+    }
+}))
 
 app.get("/", async (req, res) => {
 
@@ -35,26 +60,22 @@ app.get("/", async (req, res) => {
             }
         }
     })
-
-    const latestTourneyAnnouncement = await Tourney.findOne({
-        where:
-        {
-            createdAt:
-            {
-                [Op.gt]: today
-            }
-        }
-    })
-
+    
     res.render("home.handlebars", {
         req,
         upcomingMatch,
-        latestTourneyAnnouncement
     })
 })
 
-//For now, these get methods just get all the items in the table and display it as json
-//TODO: Set up an actual interface for doing this.
+app.get("/admin", (req, res) => {
+
+    res.render("admin.handlebars", {
+        req,
+        authorized
+    })
+})
+
+//Basic Get requests
 app.get("/matches", async (req, res) => {
 
     var where = {
@@ -200,7 +221,7 @@ app.get("/tournaments", async (req, res) => {
         where
     })
 
-    var TournamentSearch;
+    var TournamentSearch = true;
 
     res.render("search.handlebars", {
         req,
@@ -272,12 +293,33 @@ app.post("/tournaments", async (req, res) => {
 app.post("/matches", async (req, res) => {
     
     try {
-    const player1Id = req.body.player1Id;
-    const player2Id = req.body.player2Id;
+    var player1Id;
+    var player2Id;
     const echelon = req.body.echelon;
-    const date = req.body.date;
+    var date;
     const winnerId = req.body.winnerId;
     const tourneyId = req.body.tourneyId;
+
+    if (req.body.date !== "")
+    {
+        date = req.body.date;
+    }
+    if (req.body.player1Id !== "" && req.body.player1Id !== undefined)
+    {
+        player1Id = req.body.player1;
+    }
+    else
+    {
+        player1Id = null
+    }
+    if (req.body.player2Id !== "" && req.body.player2Id !== undefined)
+    {
+        player2Id = req.body.player2;
+    }
+    else
+    {
+        player2Id = null
+    }
 
     await Match.create({
         player1Id,

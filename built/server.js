@@ -22,14 +22,30 @@ const player_1 = require("./models/player");
 const allow_prototype_access_1 = require("@handlebars/allow-prototype-access");
 const handlebars_1 = __importDefault(require("handlebars"));
 const sequelize_1 = require("sequelize");
+const express_session_1 = __importDefault(require("express-session"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const SequelizeStore = require('connect-session-sequelize')(express_session_1.default.Store);
+const store = new SequelizeStore({ db: database_1.default });
 database_1.default.sync();
+//DEBUG THING. DISABLE BEFORE SHIPPING
+const authorized = true;
 //Server stuff
 const port = 3000;
 const app = (0, express_1.default)();
 app.use((0, body_parser_1.default)());
-//app.use(cookieParser())
+app.use((0, cookie_parser_1.default)());
 app.engine("handlebars", (0, express_handleBars_1.engine)({
     handlebars: (0, allow_prototype_access_1.allowInsecurePrototypeAccess)(handlebars_1.default)
+}));
+app.use((0, express_session_1.default)({
+    secret: 'secretKey',
+    resave: false,
+    saveUninitialized: true,
+    store: store,
+    cookie: {
+        secure: true,
+        maxAge: 3600000 //60 minute age
+    }
 }));
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const today = new Date().setHours(0, 0, 0, 0);
@@ -40,21 +56,18 @@ app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             }
         }
     });
-    const latestTourneyAnnouncement = yield tourney_1.Tourney.findOne({
-        where: {
-            createdAt: {
-                [sequelize_1.Op.gt]: today
-            }
-        }
-    });
     res.render("home.handlebars", {
         req,
         upcomingMatch,
-        latestTourneyAnnouncement
     });
 }));
-//For now, these get methods just get all the items in the table and display it as json
-//TODO: Set up an actual interface for doing this.
+app.get("/admin", (req, res) => {
+    res.render("admin.handlebars", {
+        req,
+        authorized
+    });
+});
+//Basic Get requests
 app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var where = {};
     if (req.query.winner !== undefined && req.query.winner !== "") {
@@ -137,7 +150,7 @@ app.get("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function
     const Tournament = yield tourney_1.Tourney.findAll({
         where
     });
-    const TournamentSearch = true;
+    var TournamentSearch = true;
     res.render("search.handlebars", {
         req,
         Tournament,
@@ -192,12 +205,27 @@ app.post("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, functio
 }));
 app.post("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const player1Id = req.body.player1Id;
-        const player2Id = req.body.player2Id;
+        var player1Id;
+        var player2Id;
         const echelon = req.body.echelon;
-        const date = req.body.date;
+        var date;
         const winnerId = req.body.winnerId;
         const tourneyId = req.body.tourneyId;
+        if (req.body.date !== "") {
+            date = req.body.date;
+        }
+        if (req.body.player1Id !== "" && req.body.player1Id !== undefined) {
+            player1Id = req.body.player1;
+        }
+        else {
+            player1Id = null;
+        }
+        if (req.body.player2Id !== "" && req.body.player2Id !== undefined) {
+            player2Id = req.body.player2;
+        }
+        else {
+            player2Id = null;
+        }
         yield match_1.Match.create({
             player1Id,
             player2Id,

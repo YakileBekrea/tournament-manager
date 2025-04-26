@@ -19,14 +19,22 @@
     <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
 
         <p>
-            Competitors: 
+            Competitors: <br>
+            {{#if player1Id}}
             <a href="players/{{player1Id}}">
             Entrant {{player1Id}}
             </a>
-            , 
+            {{else}}
+                TBD
+            {{/if}}
+            <br>
+            {{#if player2Id}}
             <a href="players/{{player2Id}}">
             Entrant {{player2Id}}
             </a>
+            {{else}}
+                 TBD
+            {{/if}}
         </p>
         <a href="matches/{{matchId}}">
             View

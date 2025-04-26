@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<body style="background-color:black">
+    {{#if authorized}}
+    <center>
+        <div style="background-color:azure; padding:10px; border-style:double; text-align:center">
+        Register Player/Team: <br><br>
+        <form method="post" action="/players">
+        <label for="name">Name: </label>
+        <input type="text" id="name" name="name"><br><br>
+        <label for="size">Size: </label>
+        <input type="text" id="size" name="size"><br><br>
+        <label for="skillLevel">Skill Level: </label>
+        <input type="text" id="skillLevel" name="skillLevel"><br><br>
+        <input type="submit" value="Register" id="submit">
+        </form>
+        </div>
+        <div style="background-color:azure; padding:10px; border-style:double; text-align:center">
+        Create Match: <br><br>
+        <form method="post" action="/matches">
+        <label for="player1">Player 1: </label>
+        <input type="text" id="player1" name="player1"><br><br>
+        <label for="player2">Player 2: </label>
+        <input type="text" id="player2" name="player2"><br><br>
+        <label for="winner">Winner: </label>
+        <input type="text" id="winner" name="winner"><br><br>
+        <label for="tourneyId">Tournament: </label>
+        <input type="text" id="tourneyId" name="tourneyId"><br><br>
+        <label for="echelon">Echelon: </label>
+        <input type="text" id="echelon" name="echelon"><br><br>
+        <label for="date">Date: </label>
+        <input type="text" id="date" name="date"><br><br>
+        <label for="nextMatch">Next Match: </label>
+        <input type="text" id="nextMatch" name="nextMatch"><br><br>
+        <input type="submit" value="Create" id="submit">
+        </form>
+        </div>
+        <div style="background-color:azure; padding:10px; border-style:double">
+        Create Tournament: <br><br>
+        <form method="post" action="/tournaments">
+        <label for="eventName">Name: </label>
+        <input type="text" id="eventName" name="eventName"><br><br>
+        <label for="description">Description: </label>
+        <input type="text" id="description" name="description"><br><br>
+        <input type="submit" value="Create" id="submit">
+        </form>
+        </div>
+    </center>
+    </center>
+    {{else}}
+    <center>
+    <div style="background-color:azure; padding:10px; border-style:double;">
+        Enter password to access admin controls: <br><br>
+
+        <form method="get" action="/admin">
+            <label for="password">Password: </label>
+            <input type="text" id="password" name="password"><br><br>
+            <input type="submit" value="Login" id="submit">
+        </form>
+    </div>
+    </center>
+    {{/if}}
+</body>
