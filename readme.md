@@ -16,14 +16,15 @@ name
 size
 skillLevel
 
-Match:
+Match: 
+
 player1Id (optional)
 player2Id (optional)
 winnerId (optional)
 date (optional)
 tourneyId
 
-Tournament
+Tournament:
 
 eventName
 description
@@ -31,7 +32,7 @@ description
 Delete methods can be accessed with "/players/id", "/tournaments/id", "/matches/id"
 
 The id routing can be ommited. If so, records will be deleted by priority of the fields specificied in the request's body.
-The priorities are
+The priorities are:
 
 Match:
 
