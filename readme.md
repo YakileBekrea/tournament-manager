@@ -40,3 +40,7 @@ player1Id
 player2Id
 winnerId
 date
+
+### IMPORTANT
+
+Ensure the secret key defined for session altered from "secretKey." This should be only known to admins and kept safe.
