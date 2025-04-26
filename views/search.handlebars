@@ -3,6 +3,56 @@
 <body style="background-color:black">
     
     <center>
+    {{#if MatchSearch}}
+    <form action="/matches" method="get" style="background-color:azure; padding10px; border-style:double; width:520px">
+        <label for="player1">Player 1:</label>
+        <input type="text" id="player1" name="player1"><br><br>
+        <label for="player2">Player 2:</label>
+        <input type="text" id="player2" name="player2"><br><br>
+        <label for="winner">Winner:</label>
+        <input type="text" id="winner" name="winner"><br><br>
+        <input type="submit" value="Search" id="submit">
+    </form>
+    {{#if Matches}}
+    {{#each Matches}}
+
+    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+
+        <p>
+            Competitors: 
+            <a href="players/{{player1Id}}">
+            Entrant {{player1Id}}
+            </a>
+            , 
+            <a href="players/{{player2Id}}">
+            Entrant {{player2Id}}
+            </a>
+        </p>
+        <a href="matches/{{matchId}}">
+            View
+        </a>
+
+    </div>
+
+    {{/each}}
+    {{else}}
+        <div style="background-color:azure; padding:10px; border-style:double; width:500px">
+                NOT FOUND
+            </div>
+    {{/if}}
+    {{/if}}
+    {{#if PlayerSearch}}
+    
+    <form action="/players" method="get" style="background-color:azure; padding10px; border-style:double; width:520px">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"><br><br>
+        <label for="skillLevel">Skill Level:</label>
+        <input type="text" id="player2" name="player2"><br><br>
+        <label for="size:">Size:</label>
+        <input type="text" id="size" name="size"><br><br>
+        <input type="submit" value="Search" id="submit">
+    </form>
+    {{#if Players}}
     {{#each Players}}
 
     <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
@@ -23,32 +73,27 @@
 
     </div>
     {{/each}}
-
-    {{#each Matches}}
-
-    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
-
-        <p>
-            Competitors: 
-            <a href="players/{{player1Id}}">
-            Entrant {{player1Id}}
-            </a>
-            , 
-            <a href="players/{{player2Id}}">
-            Entrant {{player2Id}}
-            </a>
-        </p>
-
-    </div>
-
-    {{/each}}
-
+    {{else}}
+        <div style="background-color:azure; padding:10px; border-style:double; width:500px">
+                NOT FOUND
+            </div>
+    {{/if}}
+    {{/if}}
+    {{#if TournamentSearch}}
+    <form action="/tournaments" method="get" style="background-color:azure; padding10px; border-style:double; width:520px">
+        <label for="eventName">Event Name:</label>
+        <input type="text" id="eventName" name="eventName"><br><br>
+        <label for="winner">Winner:</label>
+        <input type="text" id="winner" name="winner"><br><br>
+        <input type="submit" value="Search" id="submit">
+    </form>
+    {{#if Tournament}}
     {{#each Tournament}}
 
     <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
 
         <p>
-            Name: {{eventName}}
+            {{eventName}}
         </p>
         <p>
             {{description}}
@@ -59,8 +104,21 @@
             Winner
         </a>
         {{/if}}
+        <a href="tournaments/{{tourneyId}}">
+            View
+        </a>
     </div>
 
     {{/each}}
+    {{else}}
+    <div style="background-color:azure; padding:10px; border-style:double; width:500px">
+                NOT FOUND
+            </div>
+    {{/if}}
+    
+    {{/if}}
+    
+    
+    
     </center>
 </body>

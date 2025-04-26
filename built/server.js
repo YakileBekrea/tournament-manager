@@ -22,7 +22,6 @@ const player_1 = require("./models/player");
 const allow_prototype_access_1 = require("@handlebars/allow-prototype-access");
 const handlebars_1 = __importDefault(require("handlebars"));
 const sequelize_1 = require("sequelize");
-const session = require('express-session');
 database_1.default.sync();
 //Server stuff
 const port = 3000;
@@ -32,10 +31,8 @@ app.use((0, body_parser_1.default)());
 app.engine("handlebars", (0, express_handleBars_1.engine)({
     handlebars: (0, allow_prototype_access_1.allowInsecurePrototypeAccess)(handlebars_1.default)
 }));
-//TODO: Make this actually display a proper homepage.
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const today = new Date().setHours(0, 0, 0, 0);
-    console.log(today);
     const upcomingMatch = yield match_1.Match.findAll({
         where: {
             date: {
@@ -43,49 +40,72 @@ app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             }
         }
     });
-    console.log(upcomingMatch);
+    const latestTourneyAnnouncement = yield tourney_1.Tourney.findOne({
+        where: {
+            createdAt: {
+                [sequelize_1.Op.gt]: today
+            }
+        }
+    });
     res.render("home.handlebars", {
         req,
-        upcomingMatch
+        upcomingMatch,
+        latestTourneyAnnouncement
     });
 }));
 //For now, these get methods just get all the items in the table and display it as json
 //TODO: Set up an actual interface for doing this.
 app.get("/matches", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var where = {};
-    if (req.query.winner !== undefined) {
+    if (req.query.winner !== undefined && req.query.winner !== "") {
         where = Object.assign(Object.assign({}, where), { winnerId: req.query.winner });
     }
-    if (req.query.player1 !== undefined) {
+    if (req.query.player1 !== undefined && req.query.player1 !== "") {
         where = Object.assign(Object.assign({}, where), { player1Id: req.query.player1 });
     }
-    if (req.query.player2 !== undefined) {
+    if (req.query.player2 !== undefined && req.query.player2 !== "") {
         where = Object.assign(Object.assign({}, where), { player2Id: req.query.player2 });
     }
     const Matches = yield match_1.Match.findAll({
         where
     });
+    const MatchSearch = true;
     res.render("search.handlebars", {
         req,
-        Matches
+        Matches,
+        MatchSearch
     });
 }));
 app.get("/matches/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const Matches = yield match_1.Match.findOne({
+    const match = yield match_1.Match.findOne({
         where: {
             matchId: req.params.id
         }
     });
-    //debug for testing the countDaysUntil method.
-    //delete later.
-    console.log(Matches === null || Matches === void 0 ? void 0 : Matches.countDaysUntil());
-    res.json(Matches);
+    res.render("match.handlebars", {
+        req,
+        match
+    });
 }));
 app.get("/players", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const Players = yield player_1.Player.findAll();
+    var where = {};
+    if (req.query.name !== undefined && req.query.name !== "") {
+        where = Object.assign(Object.assign({}, where), { name: req.query.name });
+    }
+    if (req.query.skillLevel !== undefined && req.query.skillLevel !== "") {
+        where = Object.assign(Object.assign({}, where), { skillLevel: req.query.skillLevel });
+    }
+    if (req.query.size !== undefined && req.query.size !== "") {
+        where = Object.assign(Object.assign({}, where), { size: req.query.size });
+    }
+    const Players = yield player_1.Player.findAll({
+        where
+    });
+    const PlayerSearch = true;
     res.render("search.handlebars", {
         req,
-        Players
+        Players,
+        PlayerSearch
     });
     //res.json(Players)
 }));
@@ -107,10 +127,21 @@ app.get("/players/:id", (req, res) => __awaiter(void 0, void 0, void 0, function
     });
 }));
 app.get("/tournaments", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const Tournament = yield tourney_1.Tourney.findAll();
+    var where = {};
+    if (req.query.eventName !== undefined && req.query.eventName !== "") {
+        where = Object.assign(Object.assign({}, where), { eventName: req.query.eventName });
+    }
+    if (req.query.winner !== undefined && req.query.winner !== "") {
+        where = Object.assign(Object.assign({}, where), { winnerId: req.query.winner });
+    }
+    const Tournament = yield tourney_1.Tourney.findAll({
+        where
+    });
+    const TournamentSearch = true;
     res.render("search.handlebars", {
         req,
-        Tournament
+        Tournament,
+        TournamentSearch
     });
 }));
 app.get("/tournaments/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {

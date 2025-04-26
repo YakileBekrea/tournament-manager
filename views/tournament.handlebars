@@ -1,5 +1,31 @@
 <!DOCTYPE html>
 
 <body style="background-color:black">
-    
+    <center>
+    {{#if Tournament}}
+    {{#Tournament}}
+
+    <div style="font-size: 20px; display:list-item; background-color:azure; border-style:double; padding:10px; width:500px">
+
+        <p>
+            {{eventName}}
+        </p>
+        <p>
+            {{description}}
+        </p>
+
+        {{#if winnerId}}
+        <a href="/players/{{winnerId}}">
+            Winner
+        </a>
+        {{/if}}
+    </div>
+
+    {{/Tournament}}
+    {{else}}
+    <div style="background-color:azure; padding:10px; border-style:double; ">
+                NOT FOUND
+            </div>
+    {{/if}}
+    </center>
 </body>

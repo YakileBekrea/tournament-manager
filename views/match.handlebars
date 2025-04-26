@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+<body style="background-color:black">
+    
+    <center>
+        {{#if match}}
+            {{#match}}
+                <div style="font-size:20px; width:500px; background-color:azure; padding:10px; border-style:double">
+                    Competitors:
+                    <a href="/players/{{player1Id}}">
+                        Entrant {{player1Id}}
+                    </a>,
+                    <a href="/players/{{player2Id}}">
+                        Entrant {{player2Id}}
+                    </a>
+                    <p>
+                        Happening at:
+                        <p>
+                            {{date}}
+                        </p>
+                    </p>
+                </div>
+            {{/match}}
+        {{else}}
+            <div style="background-color:azure; padding:10px; border-style:double; ">
+                NOT FOUND
+            </div>
+        {{/if}}
+        
+    </center>
+
+</body>

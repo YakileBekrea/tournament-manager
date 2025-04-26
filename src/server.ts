@@ -1,6 +1,5 @@
 import express from "express";
 import { engine } from "express-handleBars"
-import helmet from "helmet"
 import bodyParser, { json } from "body-parser";
 import sequelize from "./database";
 import { Tourney } from "./models/tourney";
@@ -9,8 +8,6 @@ import { Player } from "./models/player"
 import { allowInsecurePrototypeAccess } from "@handlebars/allow-prototype-access";
 import Handlebars from 'handlebars';
 import { Op } from "sequelize";
-
-const session = require('express-session')
 
 sequelize.sync()
 
@@ -25,7 +22,7 @@ app.engine("handlebars", engine({
     handlebars: allowInsecurePrototypeAccess(Handlebars)
 }))
 
-//TODO: Make this actually display a proper homepage.
+
 app.get("/", async (req, res) => {
 
     const today = new Date().setHours(0,0,0,0)
@@ -39,9 +36,20 @@ app.get("/", async (req, res) => {
         }
     })
 
+    const latestTourneyAnnouncement = await Tourney.findOne({
+        where:
+        {
+            createdAt:
+            {
+                [Op.gt]: today
+            }
+        }
+    })
+
     res.render("home.handlebars", {
         req,
-        upcomingMatch
+        upcomingMatch,
+        latestTourneyAnnouncement
     })
 })
 
@@ -53,21 +61,21 @@ app.get("/matches", async (req, res) => {
         
     }
 
-    if (req.query.winner !== undefined)
+    if (req.query.winner !== undefined && req.query.winner !== "")
     {
         where = {
             ...where,
             winnerId: req.query.winner
         }
     }
-    if (req.query.player1 !== undefined)
+    if (req.query.player1 !== undefined && req.query.player1 !== "")
     {
         where = {
             ...where,
             player1Id: req.query.player1
         }
     }
-    if (req.query.player2 !== undefined)
+    if (req.query.player2 !== undefined && req.query.player2 !== "")
     {
         where = {
             ...where,
@@ -79,36 +87,68 @@ app.get("/matches", async (req, res) => {
         where
     })
 
+    const MatchSearch = true;
 
     res.render("search.handlebars", {
         req,
-        Matches
+        Matches,
+        MatchSearch
     })
 })
 
 app.get("/matches/:id", async (req, res) => {
 
-    const Matches = await Match.findOne({
+    const match = await Match.findOne({
         where:
         {
             matchId: req.params.id
         }
     })
 
-    //debug for testing the countDaysUntil method.
-    //delete later.
-    console.log(Matches?.countDaysUntil())
-
-    res.json(Matches)
+    res.render("match.handlebars", {
+        req,
+        match
+    })
 })
 
 app.get("/players", async (req, res) => {
 
-    const Players = await Player.findAll()
+    var where = {
+
+    };
+
+    if (req.query.name !== undefined && req.query.name !== "")
+        {
+            where = {
+                ...where,
+                name: req.query.name
+            }
+        }
+        if (req.query.skillLevel !== undefined && req.query.skillLevel !== "")
+        {
+            where = {
+                ...where,
+                skillLevel: req.query.skillLevel
+            }
+        }
+        if (req.query.size !== undefined && req.query.size !== "")
+        {
+            where = {
+                ...where,
+                size: req.query.size
+            }
+        }
+
+    const Players = await Player.findAll({
+        where
+    })
+
+    const PlayerSearch = true;
 
     res.render("search.handlebars", {
         req,
-        Players
+        Players,
+        PlayerSearch
     })
     //res.json(Players)
 })
@@ -137,11 +177,35 @@ app.get("/players/:id", async (req, res) => {
 
 app.get("/tournaments", async (req, res) => {
 
-    const Tournament = await Tourney.findAll()
+    var where = {
+
+    }
+
+    if (req.query.eventName !== undefined && req.query.eventName !== "")
+        {
+            where = {
+                ...where,
+                eventName: req.query.eventName
+            }
+        }
+        if (req.query.winner !== undefined && req.query.winner !== "")
+        {
+            where = {
+                ...where,
+                winnerId: req.query.winner
+            }
+        }
+
+    const Tournament = await Tourney.findAll({
+        where
+    })
+
+    var TournamentSearch;
 
     res.render("search.handlebars", {
         req,
-        Tournament
+        Tournament,
+        TournamentSearch
     })
 })
 
