@@ -1,7 +1,9 @@
 ### This is a tournament manager server built on express.
 
 To use, run the following commands:
+
 npm run build
+
 npm run start
 
 The server will run on the port specified in server.ts. By default 3000
